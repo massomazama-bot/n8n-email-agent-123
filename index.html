@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Email Agent</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f4f5f7;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .card {
+            max-width: 640px;
+            margin: auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .08);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 22px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin: 14px 0 6px;
+            font-size: 14px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .row>div {
+            flex: 1;
+        }
+
+        button {
+            margin-top: 18px;
+            width: 100%;
+            padding: 12px;
+            background: #ea4b71;
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: wait;
+        }
+
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .err {
+            color: #b00020;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Email Agent</h1>
+        <form id="f">
+            <div class="row">
+                <div><label>Sender name</label><input id="senderName" value="Solaris Zama" required /></div>
+                <div><label>Sender email</label><input id="senderEmail" type="email" value="massomazama@gmail.com"
+                        required /></div>
+            </div>
+            <label>Recipient email</label>
+            <input id="recipient" type="email" placeholder="recipient@example.com" required />
+            <label>Reason for the email</label>
+            <textarea id="reason"
+                placeholder="e.g. Thank Jane for Tuesday's meeting and confirm the proposal is due Friday."
+                required></textarea>
+            <button id="btn" type="submit">Generate, verify &amp; send</button>
+        </form>
+        <div id="result"></div>
+    </div>
+    <script>
+        // Production URL (workflow must be published). For editor testing use .../webhook-test/email-request-ui
+        const WEBHOOK_URL = "https://smzworkstation.app.n8n.cloud/webhook/email-request-ui";
+        const ids = ["senderName", "senderEmail", "recipient"];
+        ids.forEach(id => { const v = localStorage.getItem(id); if (v) document.getElementById(id).value = v; });
+
+        document.getElementById("f").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btn"), out = document.getElementById("result");
+            const body = {};
+            [...ids, "reason"].forEach(id => body[id] = document.getElementById(id).value.trim());
+            ids.forEach(id => localStorage.setItem(id, body[id]));
+            btn.disabled = true; btn.textContent = "Working..."; out.style.display = "block"; out.className = "";
+            out.textContent = "The agent is writing and checking your email...";
+            try {
+                const res = await fetch(WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                const text = await res.text();
+                let data; try { data = JSON.parse(text); } catch { data = { result: text }; }
+                if (!res.ok) throw new Error(data.message || text || res.status);
+                out.textContent = data.result || text;
+            } catch (err) {
+                out.className = "err"; out.textContent = "Error: " + err.message;
+            } finally {
+                btn.disabled = false; btn.textContent = "Generate, verify & send";
+            }
+        });
+    </script>
+</body>
+
+</html>
