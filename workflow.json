@@ -34,8 +34,8 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const item = $json;\nconst attachments = Array.isArray(item.attachments) ? item.attachments : [];\nconst reason = item.reason || '';\n\n// 1. Recipient Name Extraction\nconst rawName = item.recipient.split('@')[0].replace(/[0-9_\\-\\.]+/g, '');\nlet recipientName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'there';\nif (recipientName.toLowerCase().endsWith('op') && recipientName.length > 2) {\n  recipientName = recipientName.slice(0, -2);\n}\n\n// Tone detection\nconst isLighthearted = /joke|friendly|lighthearted|fun|humor|laugh|emoji/i.test(reason);\nconst hasAlgebra = /algebra|math|calcul|equation|variable/i.test(reason);\n\n// 2. Intelligent Subject Line\nlet subject = 'Important Note from ' + item.senderName;\nif (hasAlgebra) {\n  subject = isLighthearted \n    ? 'Why Algebra is Secretly a Superpower 📐✨ (+ Practice Guide)'\n    : 'Essential Algebra Concepts & Study Resources';\n} else if (reason.length > 5) {\n  const cleanTopic = reason.replace(/^(explaining|telling|asking|informing|sending|please|write|make|draft)\\s+(to\\s+the\\s+receiver\\s+)?(how\\s+he\\s+should\\s+|why\\s+|that\\s+)?/i, '');\n  subject = cleanTopic.slice(0, 50).trim() + (cleanTopic.length > 50 ? '...' : '');\n  subject = subject.charAt(0).toUpperCase() + subject.slice(1);\n}\n\n// 3. Proper Email Structure: Greeting & Introduction\nconst greeting = 'Hi ' + recipientName + (isLighthearted ? '! 👋' : ',');\nconst intro = isLighthearted\n  ? 'I hope your week is off to a flying start! I wanted to send over a quick note with some thoughts and helpful resources on what we are working on.'\n  : 'I hope this email finds you well. I am reaching out to share some important guidance and resources regarding our current focus.';\n\n// 4. Structured Multi-Paragraph Body\nlet bodyP1 = '';\nlet bodyP2 = '';\nlet bodyBullets = [];\n\nif (hasAlgebra && isLighthearted) {\n  bodyP1 = 'I know what you might be thinking: \"Why do we spend so much time searching for x? x has been missing for years, maybe it just wants to be left alone!\" 😂 But jokes aside, algebra is actually one of the coolest hidden superpowers you can master.';\n  bodyP2 = 'Think of algebra not as boring letters and numbers, but as real-world puzzle solving and pattern cracking. When you get comfortable with it, you unlock skills that carry over everywhere:';\n  bodyBullets = [\n    '🎮 Leveling up analytical logic (the exact same problem-solving game developers and AI engineers use)',\n    '💡 Making tricky equations and practical questions feel like easy mini-challenges',\n    '🚀 Building confidence so advanced technical and science concepts become second nature'\n  ];\n} else {\n  const cleanReason = reason.replace(/^(explaining|telling|asking|informing)\\s+(to\\s+the\\s+receiver\\s+)?/i, '');\n  const sentences = cleanReason.split(/[\\.\\n]+/).map(s => s.trim()).filter(Boolean);\n  bodyP1 = sentences[0] ? (sentences[0].charAt(0).toUpperCase() + sentences[0].slice(1) + '.') : 'I wanted to share key insights on this topic with you.';\n  if (sentences.length > 1) {\n    bodyP2 = sentences.slice(1).join('. ') + '.';\n  } else {\n    bodyP2 = 'Putting dedicated focus into these concepts will help streamline our progress and ensure strong results moving forward.';\n  }\n}\n\n// 5. Attachment Introduction\nlet attachmentNote = '';\nif (attachments.length > 0) {\n  const attNames = attachments.map(a => a.name).join(', ');\n  attachmentNote = isLighthearted\n    ? 'To help you dive in without any stress, I have attached a great resource for you: ' + attNames + '. Take a peek when you have a quiet moment — treat each question like a riddle to crack! 🧩'\n    : 'For your review, I have attached the following file(s): ' + attNames + '. Please look through the material at your earliest convenience.';\n}\n\n// 6. Conclusion & Call to Action\nconst conclusion = isLighthearted\n  ? 'Give it a look, try a few problems, and definitely let me know if you get stuck on anything! I am always here to walk through a problem or share a shortcut. You have totally got this! 🚀💪'\n  : 'Please let me know if you have any questions or require further clarification. I look forward to hearing your thoughts and feedback.';\n\nconst signOff = `Best regards,\\n${item.senderName}\\n${item.senderEmail}`;\n\n// Combine Plain Text (separated by double linebreaks)\nconst plainTextParts = [greeting, intro, bodyP1, bodyP2];\nif (bodyBullets.length > 0) {\n  plainTextParts.push(bodyBullets.map(b => '• ' + b).join('\\n'));\n}\nif (attachmentNote) plainTextParts.push(attachmentNote);\nplainTextParts.push(conclusion, signOff);\nconst bodyText = plainTextParts.join('\\n\\n');\n\n// Build HTML File Retrieval Container\nlet fileContainerHtml = '';\nif (attachments.length > 0) {\n  const fileCards = attachments.map((att, i) => {\n    if (att.source === 'google_drive') {\n      return `<div style=\"padding: 10px 14px; background: #ffffff; border: 1px solid #d2e3fc; border-radius: 8px; margin-bottom: 8px;\">` +\n        `<span style=\"background: #e8f0fe; color: #1a73e8; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;\">Google Drive</span> ` +\n        `<strong>${att.name || 'Document'}</strong><br/>` +\n        `<a href=\"${att.url}\" target=\"_blank\" style=\"display: inline-block; margin-top: 6px; color: #1a73e8; text-decoration: underline; font-size: 13px; font-weight: 600;\">Open File in Google Drive &rarr;</a>` +\n        `</div>`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `<div style=\"padding: 10px 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px;\">` +\n      `<span style=\"background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;\">Attachment</span> ` +\n      `<strong>${att.name || 'File'}</strong> <span style=\"color: #64748b; font-size: 12px;\">(${sizeKb})</span><br/>` +\n      `<span style=\"font-size: 12px; color: #64748b;\">Attached directly to this email for download</span>` +\n      `</div>`;\n  }).join('');\n\n  fileContainerHtml = `<div style=\"margin: 22px 0; padding: 16px; background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px;\">` +\n    `<div style=\"font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px;\">📎 File Retrieval Container</div>` +\n    `<div style=\"font-size: 12px; color: #64748b; margin-bottom: 12px;\">The sender attached the following file(s) for you to view or download:</div>` +\n    fileCards +\n    `</div>`;\n}\n\n// Full Email HTML with proper spacing and typography\nconst bulletListHtml = bodyBullets.length > 0 \n  ? `<ul style=\"margin: 10px 0 16px 20px; padding: 0;\">${bodyBullets.map(b => `<li style=\"margin-bottom: 6px;\">${b}</li>`).join('')}</ul>` \n  : '';\n\nconst emailHtml = `<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; color: #1e293b; line-height: 1.6; font-size: 15px;\">` +\n  `<p style=\"margin-bottom: 14px;\">${greeting}</p>` +\n  `<p style=\"margin-bottom: 14px;\">${intro}</p>` +\n  `<p style=\"margin-bottom: 14px;\">${bodyP1}</p>` +\n  `<p style=\"margin-bottom: 10px;\">${bodyP2}</p>` +\n  bulletListHtml +\n  (attachmentNote ? `<p style=\"margin-bottom: 14px;\">${attachmentNote}</p>` : '') +\n  fileContainerHtml +\n  `<p style=\"margin-bottom: 16px;\">${conclusion}</p>` +\n  `<p style=\"margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 14px;\">Best regards,<br/><strong>${item.senderName}</strong><br/><span style=\"color: #64748b;\">${item.senderEmail}</span></p>` +\n  `</div>`;\n\n// Process binary attachments for Gmail node\nconst binary = {};\nfor (let i = 0; i < attachments.length; i++) {\n  const att = attachments[i];\n  if (att.source === 'computer' && att.data) {\n    try {\n      const base64Data = att.data.includes(',') ? att.data.split(',')[1] : att.data;\n      const buffer = Buffer.from(base64Data, 'base64');\n      const propName = i === 0 ? 'data' : `data_${i}`;\n      binary[propName] = await this.helpers.prepareBinaryData(\n        buffer,\n        att.name || `attachment_${i + 1}.pdf`,\n        att.type || 'application/octet-stream'\n      );\n    } catch (e) {}\n  }\n}\n\nconst formattedResult = `✉️ Email Verified & Sent!\\n\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `To: ${item.recipient}\\n` +\n  `From: ${item.senderName} <${item.senderEmail}>\\n` +\n  `Subject: ${subject}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n  `${bodyText}\\n\\n` +\n  (attachments.length > 0 ? `📎 Attached Items (${attachments.length}):\\n${item.filesContext}\\n\\n` : '') +\n  `✅ Verification: Introduction, multi-paragraph body, tone tuning, and conclusion successfully composed.`;\n\nreturn {\n  json: {\n    recipient: item.recipient,\n    senderEmail: item.senderEmail,\n    senderName: item.senderName,\n    subject: subject,\n    emailBody: bodyText,\n    emailHtml: emailHtml,\n    attachmentsCount: attachments.length,\n    filesContext: item.filesContext,\n    formattedDraft: formattedResult\n  },\n  binary: Object.keys(binary).length > 0 ? binary : undefined\n};"
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = [];\n\nfor (const item of $input.all()) {\n  const json = item.json;\n  const attachments = Array.isArray(json.attachments) ? json.attachments : [];\n  const reason = json.reason || '';\n\n  // 1. Recipient Name Extraction\n  const rawName = json.recipient.split('@')[0].replace(/[0-9_\\-\\.]+/g, '');\n  let recipientName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'there';\n  if (recipientName.toLowerCase().endsWith('op') && recipientName.length > 2) {\n    recipientName = recipientName.slice(0, -2);\n  }\n\n  // Tone detection\n  const isLighthearted = /joke|friendly|lighthearted|fun|humor|laugh|emoji/i.test(reason);\n  const hasAlgebra = /algebra|math|calcul|equation|variable/i.test(reason);\n\n  // 2. Intelligent Subject Line\n  let subject = 'Important Note from ' + json.senderName;\n  if (hasAlgebra) {\n    subject = isLighthearted \n      ? 'Why Algebra is Secretly a Superpower 📐✨ (+ Practice Guide)'\n      : 'Essential Algebra Concepts & Study Resources';\n  } else if (reason.length > 5) {\n    const cleanTopic = reason.replace(/^(explaining|telling|asking|informing|sending|please|write|make|draft)\\s+(to\\s+the\\s+receiver\\s+)?(how\\s+he\\s+should\\s+|why\\s+|that\\s+)?/i, '');\n    subject = cleanTopic.slice(0, 50).trim() + (cleanTopic.length > 50 ? '...' : '');\n    subject = subject.charAt(0).toUpperCase() + subject.slice(1);\n  }\n\n  // 3. Proper Email Structure: Greeting & Introduction\n  const greeting = 'Hi ' + recipientName + (isLighthearted ? '! 👋' : ',');\n  const intro = isLighthearted\n    ? 'I hope your week is off to a flying start! I wanted to send over a quick note with some thoughts and helpful resources on what we are working on.'\n    : 'I hope this email finds you well. I am reaching out to share some important guidance and resources regarding our current focus.';\n\n  // 4. Structured Multi-Paragraph Body\n  let bodyP1 = '';\n  let bodyP2 = '';\n  let bodyBullets = [];\n\n  if (hasAlgebra && isLighthearted) {\n    bodyP1 = 'I know what you might be thinking: \"Why do we spend so much time searching for x? x has been missing for years, maybe it just wants to be left alone!\" 😂 But jokes aside, algebra is actually one of the coolest hidden superpowers you can master.';\n    bodyP2 = 'Think of algebra not as boring letters and numbers, but as real-world puzzle solving and pattern cracking. When you get comfortable with it, you unlock skills that carry over everywhere:';\n    bodyBullets = [\n      '🎮 Leveling up analytical logic (the exact same problem-solving game developers and AI engineers use)',\n      '💡 Making tricky equations and practical questions feel like easy mini-challenges',\n      '🚀 Building confidence so advanced technical and science concepts become second nature'\n    ];\n  } else {\n    const cleanReason = reason.replace(/^(explaining|telling|asking|informing)\\s+(to\\s+the\\s+receiver\\s+)?/i, '');\n    const sentences = cleanReason.split(/[\\.\\n]+/).map(s => s.trim()).filter(Boolean);\n    bodyP1 = sentences[0] ? (sentences[0].charAt(0).toUpperCase() + sentences[0].slice(1) + '.') : 'I wanted to share key insights on this topic with you.';\n    if (sentences.length > 1) {\n      bodyP2 = sentences.slice(1).join('. ') + '.';\n    } else {\n      bodyP2 = 'Putting dedicated focus into these concepts will help streamline our progress and ensure strong results moving forward.';\n    }\n  }\n\n  // 5. Attachment Introduction\n  let attachmentNote = '';\n  if (attachments.length > 0) {\n    const attNames = attachments.map(a => a.name).join(', ');\n    attachmentNote = isLighthearted\n      ? 'To help you dive in without any stress, I have attached a great resource for you: ' + attNames + '. Take a peek when you have a quiet moment — treat each question like a riddle to crack! 🧩'\n      : 'For your review, I have attached the following file(s): ' + attNames + '. Please look through the material at your earliest convenience.';\n  }\n\n  // 6. Conclusion & Call to Action\n  const conclusion = isLighthearted\n    ? 'Give it a look, try a few problems, and definitely let me know if you get stuck on anything! I am always here to walk through a problem or share a shortcut. You have totally got this! 🚀💪'\n    : 'Please let me know if you have any questions or require further clarification. I look forward to hearing your thoughts and feedback.';\n\n  const signOff = `Best regards,\\n${json.senderName}\\n${json.senderEmail}`;\n\n  // Plain Text Body\n  const plainTextParts = [greeting, intro, bodyP1, bodyP2];\n  if (bodyBullets.length > 0) {\n    plainTextParts.push(bodyBullets.map(b => '• ' + b).join('\\n'));\n  }\n  if (attachmentNote) plainTextParts.push(attachmentNote);\n  plainTextParts.push(conclusion, signOff);\n  const bodyText = plainTextParts.join('\\n\\n');\n\n  // Build HTML File Retrieval Container\n  let fileContainerHtml = '';\n  if (attachments.length > 0) {\n    const fileCards = attachments.map((att, i) => {\n      if (att.source === 'google_drive') {\n        return `<div style=\"padding: 10px 14px; background: #ffffff; border: 1px solid #d2e3fc; border-radius: 8px; margin-bottom: 8px;\">` +\n          `<span style=\"background: #e8f0fe; color: #1a73e8; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;\">Google Drive</span> ` +\n          `<strong>${att.name || 'Document'}</strong><br/>` +\n          `<a href=\"${att.url}\" target=\"_blank\" style=\"display: inline-block; margin-top: 6px; color: #1a73e8; text-decoration: underline; font-size: 13px; font-weight: 600;\">Open File in Google Drive &rarr;</a>` +\n          `</div>`;\n      }\n      const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n      return `<div style=\"padding: 10px 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px;\">` +\n        `<span style=\"background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;\">Attachment</span> ` +\n        `<strong>${att.name || 'File'}</strong> <span style=\"color: #64748b; font-size: 12px;\">(${sizeKb})</span><br/>` +\n        `<span style=\"font-size: 12px; color: #64748b;\">Attached directly to this email for download</span>` +\n        `</div>`;\n    }).join('');\n\n    fileContainerHtml = `<div style=\"margin: 22px 0; padding: 16px; background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px;\">` +\n      `<div style=\"font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px;\">📎 File Retrieval Container</div>` +\n      `<div style=\"font-size: 12px; color: #64748b; margin-bottom: 12px;\">The sender attached the following file(s) for you to view or download:</div>` +\n      fileCards +\n      `</div>`;\n  }\n\n  const bulletListHtml = bodyBullets.length > 0 \n    ? `<ul style=\"margin: 10px 0 16px 20px; padding: 0;\">${bodyBullets.map(b => `<li style=\"margin-bottom: 6px;\">${b}</li>`).join('')}</ul>` \n    : '';\n\n  const emailHtml = `<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; color: #1e293b; line-height: 1.6; font-size: 15px;\">` +\n    `<p style=\"margin-bottom: 14px;\">${greeting}</p>` +\n    `<p style=\"margin-bottom: 14px;\">${intro}</p>` +\n    `<p style=\"margin-bottom: 14px;\">${bodyP1}</p>` +\n    `<p style=\"margin-bottom: 10px;\">${bodyP2}</p>` +\n    bulletListHtml +\n    (attachmentNote ? `<p style=\"margin-bottom: 14px;\">${attachmentNote}</p>` : '') +\n    fileContainerHtml +\n    `<p style=\"margin-bottom: 16px;\">${conclusion}</p>` +\n    `<p style=\"margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 14px;\">Best regards,<br/><strong>${json.senderName}</strong><br/><span style=\"color: #64748b;\">${json.senderEmail}</span></p>` +\n    `</div>`;\n\n  // Process binary attachments\n  const binary = {};\n  for (let i = 0; i < attachments.length; i++) {\n    const att = attachments[i];\n    if (att.source === 'computer' && att.data) {\n      try {\n        const base64Data = att.data.includes(',') ? att.data.split(',')[1] : att.data;\n        const buffer = Buffer.from(base64Data, 'base64');\n        const propName = i === 0 ? 'data' : `data_${i}`;\n        binary[propName] = await this.helpers.prepareBinaryData(\n          buffer,\n          att.name || `attachment_${i + 1}.pdf`,\n          att.type || 'application/octet-stream'\n        );\n      } catch (e) {}\n    }\n  }\n\n  const hasBinaryAttachment = Object.keys(binary).length > 0;\n\n  const formattedResult = `✉️ Email Verified & Sent!\\n\\n` +\n    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n    `To: ${json.recipient}\\n` +\n    `From: ${json.senderName} <${json.senderEmail}>\\n` +\n    `Subject: ${subject}\\n` +\n    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n    `${bodyText}\\n\\n` +\n    (attachments.length > 0 ? `📎 Attached Items (${attachments.length}):\\n${json.filesContext}\\n\\n` : '') +\n    `✅ Verification: Introduction, multi-paragraph body, tone tuning, and conclusion successfully composed.`;\n\n  items.push({\n    json: {\n      recipient: json.recipient,\n      senderEmail: json.senderEmail,\n      senderName: json.senderName,\n      subject: subject,\n      emailBody: bodyText,\n      emailHtml: emailHtml,\n      attachmentsCount: attachments.length,\n      filesContext: json.filesContext,\n      formattedDraft: formattedResult,\n      hasBinaryAttachment: hasBinaryAttachment\n    },\n    binary: hasBinaryAttachment ? binary : undefined\n  });\n}\n\nreturn items;"
       },
       "id": "a11d8a35-e51c-4b36-a19e-223344556677",
       "name": "Draft & Prepare Attachments",
@@ -43,6 +43,39 @@
       "typeVersion": 2,
       "position": [
         640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "11223344-5566-7788-9900-aabbccddeeff",
+              "leftValue": "={{ $json.hasBinaryAttachment }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c11d8a35-e51c-4b36-a19e-667788990011",
+      "name": "Has Binary File?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        860,
         300
       ]
     },
@@ -64,12 +97,29 @@
         }
       },
       "id": "b33d8a35-e51c-4b36-a19e-445566778899",
-      "name": "Send Email (Gmail)",
+      "name": "Send Email (With Attachment)",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        860,
-        300
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.recipient }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.emailHtml }}",
+        "options": {}
+      },
+      "id": "b44d8a35-e51c-4b36-a19e-445566778800",
+      "name": "Send Email (No Attachment)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        420
       ]
     },
     {
@@ -82,7 +132,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1080,
+        1340,
         300
       ]
     },
@@ -98,7 +148,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1300,
+        1560,
         300
       ]
     }
@@ -130,14 +180,43 @@
       "main": [
         [
           {
-            "node": "Send Email (Gmail)",
+            "node": "Has Binary File?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Email (Gmail)": {
+    "Has Binary File?": {
+      "main": [
+        [
+          {
+            "node": "Send Email (With Attachment)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email (No Attachment)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email (With Attachment)": {
+      "main": [
+        [
+          {
+            "node": "Format Delivery Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email (No Attachment)": {
       "main": [
         [
           {
