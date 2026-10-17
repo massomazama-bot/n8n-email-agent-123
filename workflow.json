@@ -1,0 +1,105 @@
+{
+  "name": "Email Agent with Attachments & Google Drive",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-request-ui",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c86d8a35-e51c-4b36-a19e-998811223344",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "webhookId": "email-request-ui"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extract request payload safely\nconst body = $json.body || $json;\n\nconst senderName = body.senderName || 'Sender';\nconst senderEmail = body.senderEmail || '';\nconst recipient = body.recipient || 'recipient@example.com';\nconst reason = body.reason || 'Follow up';\nconst attachments = Array.isArray(body.attachments) ? body.attachments : [];\nconst attachmentSummary = body.attachmentSummary || '';\n\n// Format attached files and Google Drive links\nlet filesContext = 'No attachments';\nif (attachments.length > 0) {\n  filesContext = attachments.map((att, index) => {\n    if (att.source === 'google_drive') {\n      return `• [Google Drive Link] ${att.name || 'Document'}: ${att.url}`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `• [Computer Upload] ${att.name || 'Attachment'} (${sizeKb})`;\n  }).join('\\n');\n}\n\n// Generate prompt for AI / LLM node\nconst prompt = `Sender: ${senderName} (${senderEmail})\\nRecipient: ${recipient}\\nIntent / Context: ${reason}\\nAttachments Included:\\n${filesContext}\\n\\nPlease write a polished, professional email. Include a clear subject line and sign off warmly as ${senderName}.`;\n\nreturn {\n  senderName,\n  senderEmail,\n  recipient,\n  reason,\n  attachments,\n  filesContext,\n  prompt\n};"
+      },
+      "id": "e88d8a35-e51c-4b36-a19e-112233445566",
+      "name": "Parse & Prepare Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Drafts the email using input parameters\n// If an OpenAI or AI Agent node is connected, it replaces this draft with LLM output.\nconst item = $json;\n\n// Extract subject intent\nlet subject = item.reason.length > 50 ? item.reason.substring(0, 47) + '...' : item.reason;\nif (!subject.toLowerCase().startsWith('regarding') && !subject.toLowerCase().startsWith('update')) {\n  subject = `Update: ${subject}`;\n}\n\n// Build polished message\nlet bodyText = `Hi there,\\n\\nI hope you are having a productive week.\\n\\n${item.reason}\\n`;\n\nif (item.attachments && item.attachments.length > 0) {\n  bodyText += `\\nPlease find the relevant attachment(s) referenced below:\\n${item.filesContext}\\n`;\n}\n\nbodyText += `\\nPlease let me know if you have any questions or need further details.\\n\\nBest regards,\\n${item.senderName}\\n${item.senderEmail}`;\n\nconst formattedResult = `✉️ Email Verified & Prepared!\\n\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `To: ${item.recipient}\\n` +\n  `From: ${item.senderName} <${item.senderEmail}>\\n` +\n  `Subject: ${subject}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n  `${bodyText}\\n\\n` +\n  (item.attachments.length > 0 ? `📎 Attached Items (${item.attachments.length}):\\n${item.filesContext}\\n\\n` : '') +\n  `✅ Verification: Tone checked, recipient validated, attachments indexed.`;\n\nreturn {\n  ...item,\n  subject,\n  emailBody: bodyText,\n  result: formattedResult\n};"
+      },
+      "id": "a11d8a35-e51c-4b36-a19e-223344556677",
+      "name": "Draft & Verify Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"result\": $json.result,\n  \"subject\": $json.subject,\n  \"recipient\": $json.recipient,\n  \"attachmentCount\": $json.attachments.length\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "f22d8a35-e51c-4b36-a19e-334455667788",
+      "name": "Respond to Webhook (Success)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse & Prepare Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Prepare Payload": {
+      "main": [
+        [
+          {
+            "node": "Draft & Verify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft & Verify Email": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (Success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

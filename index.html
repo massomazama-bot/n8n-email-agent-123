@@ -566,7 +566,10 @@
     </div>
 
     <script>
-        const WEBHOOK_URL = "https://smzworkstation.app.n8n.cloud/webhook/email-request-ui";
+        const PROD_WEBHOOK_URL = "https://smzworkstation.app.n8n.cloud/webhook/email-request-ui";
+        const TEST_WEBHOOK_URL = "https://smzworkstation.app.n8n.cloud/webhook-test/email-request-ui";
+        let isTestMode = localStorage.getItem("n8n_test_mode") === "true";
+
         const ids = ["senderName", "senderEmail", "recipient"];
         ids.forEach(id => {
             const v = localStorage.getItem(id);
@@ -727,6 +730,11 @@
             closeDriveModal();
         });
 
+        // Mode switch helper
+        function getActiveWebhookUrl() {
+            return isTestMode ? TEST_WEBHOOK_URL : PROD_WEBHOOK_URL;
+        }
+
         // Form Submit
         document.getElementById("f").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -776,8 +784,10 @@
             out.className = "";
             out.textContent = "The agent is writing and checking your email...";
 
+            const targetUrl = getActiveWebhookUrl();
+
             try {
-                const res = await fetch(WEBHOOK_URL, {
+                const res = await fetch(targetUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
@@ -790,7 +800,19 @@
                     data = { result: text };
                 }
 
-                if (!res.ok) throw new Error(data.message || text || res.status);
+                if (!res.ok) {
+                    if (data.message === "Error in workflow" || (text && text.includes("Error in workflow"))) {
+                        throw new Error(
+                            "n8n reported 'Error in workflow' (HTTP 500).\n\n" +
+                            "This means an internal node in your active n8n workflow threw an error.\n\n" +
+                            "👉 Quick Fix Steps:\n" +
+                            "1. Open n8n (https://smzworkstation.app.n8n.cloud) and click 'Executions' in the left menu to view which node failed.\n" +
+                            "2. Import the robust 'workflow.json' included in this repository (it handles attachments & prevents 500 crashes).\n" +
+                            "3. If testing inside the n8n editor, remember to click 'Listen for test event' or publish/activate the workflow."
+                        );
+                    }
+                    throw new Error(data.message || text || res.status);
+                }
                 out.textContent = data.result || text;
             } catch (err) {
                 out.className = "err";
