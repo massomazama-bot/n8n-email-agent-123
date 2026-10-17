@@ -21,7 +21,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Extract request payload safely\nconst body = $json.body || $json;\n\nconst senderName = body.senderName || 'Sender';\nconst senderEmail = body.senderEmail || '';\nconst recipient = body.recipient || 'recipient@example.com';\nconst reason = body.reason || 'Follow up';\nconst attachments = Array.isArray(body.attachments) ? body.attachments : [];\nconst attachmentSummary = body.attachmentSummary || '';\n\n// Format attached files and Google Drive links\nlet filesContext = 'No attachments';\nif (attachments.length > 0) {\n  filesContext = attachments.map((att, index) => {\n    if (att.source === 'google_drive') {\n      return `• [Google Drive Link] ${att.name || 'Document'}: ${att.url}`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `• [Computer Upload] ${att.name || 'Attachment'} (${sizeKb})`;\n  }).join('\\n');\n}\n\nreturn {\n  senderName,\n  senderEmail,\n  recipient,\n  reason,\n  attachments,\n  filesContext\n};"
+        "jsCode": "// Extract request payload safely\nconst body = $json.body || $json;\n\nconst senderName = body.senderName || 'Sender';\nconst senderEmail = body.senderEmail || '';\nconst recipient = body.recipient || 'recipient@example.com';\nconst reason = body.reason || 'Follow up';\nconst attachments = Array.isArray(body.attachments) ? body.attachments : [];\nconst attachmentSummary = body.attachmentSummary || '';\n\n// Format attached files and Google Drive links for text display\nlet filesContext = 'No attachments';\nif (attachments.length > 0) {\n  filesContext = attachments.map((att, index) => {\n    if (att.source === 'google_drive') {\n      return `• [Google Drive Link] ${att.name || 'Document'}: ${att.url}`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `• [Computer Upload] ${att.name || 'Attachment'} (${sizeKb})`;\n  }).join('\\n');\n}\n\nreturn {\n  senderName,\n  senderEmail,\n  recipient,\n  reason,\n  attachments,\n  filesContext\n};"
       },
       "id": "e88d8a35-e51c-4b36-a19e-112233445566",
       "name": "Parse & Prepare Payload",
@@ -35,10 +35,10 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Drafts the email using input parameters\nconst item = $json;\n\n// Extract subject intent\nlet subject = item.reason.length > 50 ? item.reason.substring(0, 47) + '...' : item.reason;\nif (!subject.toLowerCase().startsWith('regarding') && !subject.toLowerCase().startsWith('update')) {\n  subject = `Update: ${subject}`;\n}\n\n// Build polished message body\nlet bodyText = `Hi there,\\n\\nI hope you are having a productive week.\\n\\n${item.reason}\\n`;\n\nif (item.attachments && item.attachments.length > 0) {\n  bodyText += `\\nPlease find the relevant attachment(s) referenced below:\\n${item.filesContext}\\n`;\n}\n\nbodyText += `\\nPlease let me know if you have any questions or need further details.\\n\\nBest regards,\\n${item.senderName}\\n${item.senderEmail}`;\n\nconst formattedResult = `✉️ Email Verified & Sent!\\n\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `To: ${item.recipient}\\n` +\n  `From: ${item.senderName} <${item.senderEmail}>\\n` +\n  `Subject: ${subject}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n  `${bodyText}\\n\\n` +\n  (item.attachments.length > 0 ? `📎 Attached Items (${item.attachments.length}):\\n${item.filesContext}\\n\\n` : '') +\n  `✅ Verification: Tone checked, recipient validated, message dispatched.`;\n\nreturn {\n  recipient: item.recipient,\n  senderEmail: item.senderEmail,\n  senderName: item.senderName,\n  subject: subject,\n  emailBody: bodyText,\n  attachmentsCount: item.attachments.length,\n  filesContext: item.filesContext,\n  formattedDraft: formattedResult\n};"
+        "jsCode": "const item = $json;\nconst attachments = Array.isArray(item.attachments) ? item.attachments : [];\n\n// Extract subject\nlet subject = item.reason.length > 50 ? item.reason.substring(0, 47) + '...' : item.reason;\nif (!subject.toLowerCase().startsWith('regarding') && !subject.toLowerCase().startsWith('update')) {\n  subject = `Update: ${subject}`;\n}\n\n// Build plain text message\nlet bodyText = `Hi there,\\n\\nI hope you are having a productive week.\\n\\n${item.reason}\\n`;\nif (attachments.length > 0) {\n  bodyText += `\\nPlease find the relevant attachment(s) referenced below:\\n${item.filesContext}\\n`;\n}\nbodyText += `\\nPlease let me know if you have any questions or need further details.\\n\\nBest regards,\\n${item.senderName}\\n${item.senderEmail}`;\n\n// Build HTML File Retrieval Container\nlet fileContainerHtml = '';\nif (attachments.length > 0) {\n  const fileCards = attachments.map((att, i) => {\n    if (att.source === 'google_drive') {\n      return `<div style=\"padding: 10px 14px; background: #ffffff; border: 1px solid #d2e3fc; border-radius: 8px; margin-bottom: 8px;\">` +\n        `<span style=\"background: #e8f0fe; color: #1a73e8; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;\">Google Drive</span> ` +\n        `<strong>${att.name || 'Document'}</strong><br/>` +\n        `<a href=\"${att.url}\" target=\"_blank\" style=\"display: inline-block; margin-top: 6px; color: #1a73e8; text-decoration: underline; font-size: 13px; font-weight: 600;\">Open File in Google Drive &rarr;</a>` +\n        `</div>`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `<div style=\"padding: 10px 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px;\">` +\n      `<span style=\"background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;\">Attachment</span> ` +\n      `<strong>${att.name || 'File'}</strong> <span style=\"color: #64748b; font-size: 12px;\">(${sizeKb})</span><br/>` +\n      `<span style=\"font-size: 12px; color: #64748b;\">Attached directly to this email for download</span>` +\n      `</div>`;\n  }).join('');\n\n  fileContainerHtml = `<div style=\"margin: 20px 0; padding: 16px; background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px;\">` +\n    `<div style=\"font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px;\">📎 File Retrieval Container</div>` +\n    `<div style=\"font-size: 12px; color: #64748b; margin-bottom: 12px;\">The sender attached the following file(s) for you to view or download:</div>` +\n    fileCards +\n    `</div>`;\n}\n\n// Full Email HTML\nconst emailHtml = `<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; color: #1e293b; line-height: 1.6; font-size: 14px;\">` +\n  `<p>Hi there,</p>` +\n  `<p>I hope you are having a productive week.</p>` +\n  `<p>${item.reason}</p>` +\n  fileContainerHtml +\n  `<p>Please let me know if you have any questions or need further details.</p>` +\n  `<p style=\"margin-top: 24px;\">Best regards,<br/><strong>${item.senderName}</strong><br/><span style=\"color: #64748b;\">${item.senderEmail}</span></p>` +\n  `</div>`;\n\n// Process binary attachments for Gmail node\nconst binary = {};\nfor (let i = 0; i < attachments.length; i++) {\n  const att = attachments[i];\n  if (att.source === 'computer' && att.data) {\n    try {\n      const base64Data = att.data.includes(',') ? att.data.split(',')[1] : att.data;\n      const buffer = Buffer.from(base64Data, 'base64');\n      const propName = i === 0 ? 'data' : `data_${i}`;\n      binary[propName] = await this.helpers.prepareBinaryData(\n        buffer,\n        att.name || `attachment_${i + 1}.pdf`,\n        att.type || 'application/octet-stream'\n      );\n    } catch (e) {}\n  }\n}\n\nconst formattedResult = `✉️ Email Verified & Sent!\\n\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `To: ${item.recipient}\\n` +\n  `From: ${item.senderName} <${item.senderEmail}>\\n` +\n  `Subject: ${subject}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n  `${bodyText}\\n\\n` +\n  (attachments.length > 0 ? `📎 Attached Items (${attachments.length}):\\n${item.filesContext}\\n\\n` : '') +\n  `✅ Verification: Physical file attached, retrieval container generated, dispatched via Gmail.`;\n\nreturn {\n  json: {\n    recipient: item.recipient,\n    senderEmail: item.senderEmail,\n    senderName: item.senderName,\n    subject: subject,\n    emailBody: bodyText,\n    emailHtml: emailHtml,\n    attachmentsCount: attachments.length,\n    filesContext: item.filesContext,\n    formattedDraft: formattedResult\n  },\n  binary: Object.keys(binary).length > 0 ? binary : undefined\n};"
       },
       "id": "a11d8a35-e51c-4b36-a19e-223344556677",
-      "name": "Draft & Verify Email",
+      "name": "Draft & Prepare Attachments",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -50,8 +50,18 @@
       "parameters": {
         "sendTo": "={{ $json.recipient }}",
         "subject": "={{ $json.subject }}",
-        "message": "={{ $json.emailBody }}",
-        "options": {}
+        "emailType": "html",
+        "message": "={{ $json.emailHtml }}",
+        "options": {
+          "attachments": "data",
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          }
+        }
       },
       "id": "b33d8a35-e51c-4b36-a19e-445566778899",
       "name": "Send Email (Gmail)",
@@ -65,7 +75,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const draft = $('Draft & Verify Email').first().json;\nconst gmailOutput = $json;\n\nconst confirmationText = `🚀 Email Successfully Dispatched!\\n\\n` +\n  `Status: Sent to ${draft.recipient}\\n` +\n  (gmailOutput.id ? `Gmail Message ID: ${gmailOutput.id}\\n` : '') +\n  `\\n` + draft.formattedDraft;\n\nreturn {\n  status: 'success',\n  result: confirmationText,\n  recipient: draft.recipient,\n  subject: draft.subject,\n  messageId: gmailOutput.id || 'sent'\n};"
+        "jsCode": "const draft = $('Draft & Prepare Attachments').first().json;\nconst gmailOutput = $json;\n\nconst confirmationText = `🚀 Email & Attachments Delivered!\\n\\n` +\n  `Recipient: ${draft.recipient}\\n` +\n  (gmailOutput.id ? `Gmail ID: ${gmailOutput.id}\\n` : '') +\n  `Attachments Sent: ${draft.attachmentsCount}\\n\\n` +\n  draft.formattedDraft;\n\nreturn {\n  status: 'success',\n  result: confirmationText,\n  recipient: draft.recipient,\n  subject: draft.subject,\n  messageId: gmailOutput.id || 'sent'\n};"
       },
       "id": "d44d8a35-e51c-4b36-a19e-556677889900",
       "name": "Format Delivery Confirmation",
@@ -109,14 +119,14 @@
       "main": [
         [
           {
-            "node": "Draft & Verify Email",
+            "node": "Draft & Prepare Attachments",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Draft & Verify Email": {
+    "Draft & Prepare Attachments": {
       "main": [
         [
           {
