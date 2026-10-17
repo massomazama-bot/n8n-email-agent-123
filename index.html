@@ -3,137 +3,801 @@
 
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Email Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #ea4b71;
+            --primary-hover: #d93d62;
+            --primary-light: #fef2f4;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-900: #0f172a;
+            --drive-blue: #1a73e8;
+            --drive-hover: #1557b0;
+            --radius: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: system-ui, sans-serif;
-            background: #f4f5f7;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #f1f4f9;
             margin: 0;
-            padding: 40px;
+            padding: 32px 16px;
+            color: var(--slate-900);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .card {
-            max-width: 640px;
-            margin: auto;
-            background: #fff;
-            border-radius: 12px;
-            padding: 28px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, .08);
+            width: 100%;
+            max-width: 660px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+            border: 1px solid var(--slate-200);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #fb7185);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(234, 75, 113, 0.3);
         }
 
         h1 {
-            margin-top: 0;
+            margin: 0;
             font-size: 22px;
+            font-weight: 700;
+            color: var(--slate-900);
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            margin: 2px 0 0;
+            font-size: 13px;
+            color: var(--slate-600);
         }
 
         label {
             display: block;
             font-weight: 600;
-            margin: 14px 0 6px;
-            font-size: 14px;
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        textarea {
-            min-height: 120px;
-            resize: vertical;
+            margin: 16px 0 6px;
+            font-size: 13px;
+            color: var(--slate-700);
         }
 
         .row {
             display: flex;
-            gap: 12px;
+            gap: 14px;
         }
 
         .row>div {
             flex: 1;
         }
 
-        button {
-            margin-top: 18px;
+        input[type="text"],
+        input[type="email"],
+        textarea {
             width: 100%;
-            padding: 12px;
-            background: #ea4b71;
+            padding: 11px 14px;
+            border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--slate-900);
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(234, 75, 113, 0.15);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* Attachment Section */
+        .attachments-section {
+            margin-top: 18px;
+            padding: 16px;
+            background: var(--slate-50);
+            border: 1.5px dashed var(--slate-300);
+            border-radius: 12px;
+            transition: border-color 0.2s ease;
+        }
+
+        .attachments-section.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .attachments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .attachments-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-700);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-upload {
+            flex: 1;
+            min-width: 160px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid var(--slate-300);
+            background: #ffffff;
+            color: var(--slate-700);
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload:hover {
+            background: var(--slate-100);
+            border-color: var(--slate-600);
+        }
+
+        .btn-upload.btn-drive {
+            color: var(--drive-blue);
+            border-color: #d2e3fc;
+            background: #ffffff;
+        }
+
+        .btn-upload.btn-drive:hover {
+            background: #f1f6fd;
+            border-color: var(--drive-blue);
+        }
+
+        /* File List */
+        .file-list {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 1px solid var(--slate-200);
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .file-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-computer {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-drive {
+            background: #e8f0fe;
+            color: var(--drive-blue);
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--slate-900);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+        }
+
+        .file-meta {
+            color: var(--slate-600);
+            font-size: 11px;
+            margin-left: 6px;
+        }
+
+        .btn-remove-file {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 15px;
+            line-height: 1;
+            transition: all 0.15s ease;
+        }
+
+        .btn-remove-file:hover {
+            color: #ef4444;
+            background: #fee2e2;
+        }
+
+        /* Submit Button */
+        button[type="submit"] {
+            margin-top: 22px;
+            width: 100%;
+            padding: 13px;
+            background: var(--primary);
             color: #fff;
             border: 0;
-            border-radius: 8px;
+            border-radius: var(--radius);
             font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
+            box-shadow: 0 4px 12px rgba(234, 75, 113, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        button[type="submit"]:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(234, 75, 113, 0.35);
         }
 
         button:disabled {
-            opacity: .6;
+            opacity: 0.65;
             cursor: wait;
+            transform: none !important;
         }
 
         #result {
             margin-top: 20px;
             white-space: pre-wrap;
-            background: #fafafa;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 14px;
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius);
+            padding: 16px;
             font-size: 14px;
+            line-height: 1.5;
             display: none;
+            animation: fadeIn 0.25s ease;
         }
 
         .err {
-            color: #b00020;
+            color: #b91c1c;
+            background: #fef2f2 !important;
+            border-color: #fecaca !important;
+        }
+
+        /* Google Drive Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 24px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            animation: scaleIn 0.2s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--slate-900);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--slate-600);
+            border-radius: 6px;
+            padding: 2px 6px;
+        }
+
+        .modal-close:hover {
+            background: var(--slate-100);
+        }
+
+        .modal-body {
+            font-size: 13px;
+            color: var(--slate-600);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            padding: 9px 16px;
+            background: var(--slate-100);
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-700);
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: var(--slate-200);
+        }
+
+        .btn-primary-modal {
+            padding: 9px 18px;
+            background: var(--drive-blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary-modal:hover {
+            background: var(--drive-hover);
         }
     </style>
 </head>
 
 <body>
     <div class="card">
-        <h1>Email Agent</h1>
+        <div class="header">
+            <div class="header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="20" height="16" x="2" y="4" rx="2"/>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+            </div>
+            <div>
+                <h1>Email Agent</h1>
+                <p class="subtitle">Generate, verify, and dispatch emails with smart attachments</p>
+            </div>
+        </div>
+
         <form id="f">
             <div class="row">
-                <div><label>Sender name</label><input id="senderName" value="Solaris Zama" required /></div>
-                <div><label>Sender email</label><input id="senderEmail" type="email" value="massomazama@gmail.com"
-                        required /></div>
+                <div>
+                    <label for="senderName">Sender name</label>
+                    <input id="senderName" value="Solaris Zama" required />
+                </div>
+                <div>
+                    <label for="senderEmail">Sender email</label>
+                    <input id="senderEmail" type="email" value="massomazama@gmail.com" required />
+                </div>
             </div>
-            <label>Recipient email</label>
+
+            <label for="recipient">Recipient email</label>
             <input id="recipient" type="email" placeholder="recipient@example.com" required />
-            <label>Reason for the email</label>
-            <textarea id="reason"
-                placeholder="e.g. Thank Jane for Tuesday's meeting and confirm the proposal is due Friday."
-                required></textarea>
+
+            <label for="reason">Reason for the email</label>
+            <textarea id="reason" placeholder="e.g. Thank Jane for Tuesday's meeting and confirm the proposal is due Friday." required></textarea>
+
+            <!-- Attachments Component -->
+            <div class="attachments-section" id="dropZone">
+                <div class="attachments-header">
+                    <div class="attachments-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                        </svg>
+                        <span>Attachments</span>
+                        <span id="fileCount" style="font-weight: normal; color: var(--slate-600); font-size: 12px;">(0)</span>
+                    </div>
+                </div>
+
+                <input type="file" id="computerFileInput" multiple style="display: none;" />
+
+                <div class="upload-buttons">
+                    <button type="button" class="btn-upload" id="btnComputerUpload">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="14" x="2" y="3" rx="2"/>
+                            <line x1="8" x2="16" y1="21" y2="21"/>
+                            <line x1="12" x2="12" y1="17" y2="21"/>
+                        </svg>
+                        Upload from Computer
+                    </button>
+
+                    <button type="button" class="btn-upload btn-drive" id="btnDriveUpload">
+                        <svg width="16" height="16" viewBox="0 0 87.3 78" fill="currentColor">
+                            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                            <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                        </svg>
+                        Add from Google Drive
+                    </button>
+                </div>
+
+                <div class="file-list" id="fileList"></div>
+            </div>
+
             <button id="btn" type="submit">Generate, verify &amp; send</button>
         </form>
         <div id="result"></div>
     </div>
+
+    <!-- Google Drive Link Modal -->
+    <div class="modal-overlay" id="driveModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg width="20" height="20" viewBox="0 0 87.3 78" fill="currentColor">
+                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                        <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                    </svg>
+                    Google Drive File
+                </div>
+                <button type="button" class="modal-close" id="btnModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                Paste the shareable link from your Google Drive. Ensure file sharing is set to <strong>"Anyone with the link can view"</strong> so the recipient and agent can access it.
+            </div>
+            <label for="driveFileName">File name (optional)</label>
+            <input type="text" id="driveFileName" placeholder="e.g. Sales_Proposal_Q4.pdf" />
+
+            <label for="driveUrl">Google Drive shareable link</label>
+            <input type="text" id="driveUrl" placeholder="https://drive.google.com/file/d/..." />
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="btnCancelDrive">Cancel</button>
+                <button type="button" class="btn-primary-modal" id="btnAddDriveFile">Attach File</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Production URL (workflow must be published). For editor testing use .../webhook-test/email-request-ui
         const WEBHOOK_URL = "https://smzworkstation.app.n8n.cloud/webhook/email-request-ui";
         const ids = ["senderName", "senderEmail", "recipient"];
-        ids.forEach(id => { const v = localStorage.getItem(id); if (v) document.getElementById(id).value = v; });
+        ids.forEach(id => {
+            const v = localStorage.getItem(id);
+            if (v) document.getElementById(id).value = v;
+        });
 
+        // Store attachments
+        const attachments = [];
+
+        const fileListEl = document.getElementById("fileList");
+        const fileCountEl = document.getElementById("fileCount");
+        const computerFileInput = document.getElementById("computerFileInput");
+        const btnComputerUpload = document.getElementById("btnComputerUpload");
+        const btnDriveUpload = document.getElementById("btnDriveUpload");
+        const driveModal = document.getElementById("driveModal");
+        const btnModalClose = document.getElementById("btnModalClose");
+        const btnCancelDrive = document.getElementById("btnCancelDrive");
+        const btnAddDriveFile = document.getElementById("btnAddDriveFile");
+        const driveUrlInput = document.getElementById("driveUrl");
+        const driveFileNameInput = document.getElementById("driveFileName");
+        const dropZone = document.getElementById("dropZone");
+
+        // Format bytes into human readable size
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // Render file list
+        function renderFiles() {
+            fileListEl.innerHTML = "";
+            fileCountEl.textContent = `(${attachments.length})`;
+
+            attachments.forEach((att, index) => {
+                const item = document.createElement("div");
+                item.className = "file-item";
+
+                const isDrive = att.source === "google_drive";
+                const badgeClass = isDrive ? "badge-drive" : "badge-computer";
+                const badgeText = isDrive ? "Google Drive" : "Computer";
+                const metaText = isDrive ? "Link" : formatBytes(att.size);
+
+                item.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-badge ${badgeClass}">${badgeText}</span>
+                        <span class="file-name" title="${att.name}">${att.name}</span>
+                        <span class="file-meta">(${metaText})</span>
+                    </div>
+                    <button type="button" class="btn-remove-file" title="Remove attachment" data-index="${index}">&times;</button>
+                `;
+
+                item.querySelector(".btn-remove-file").addEventListener("click", () => {
+                    attachments.splice(index, 1);
+                    renderFiles();
+                });
+
+                fileListEl.appendChild(item);
+            });
+        }
+
+        // Handle computer file uploads
+        btnComputerUpload.addEventListener("click", () => computerFileInput.click());
+
+        function handleLocalFiles(files) {
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    attachments.push({
+                        name: file.name,
+                        source: "computer",
+                        type: file.type || "application/octet-stream",
+                        size: file.size,
+                        data: reader.result // Base64 data URL
+                    });
+                    renderFiles();
+                };
+                reader.readAsDataURL(file);
+            });
+            computerFileInput.value = "";
+        }
+
+        computerFileInput.addEventListener("change", (e) => handleLocalFiles(e.target.files));
+
+        // Drag & Drop
+        ['dragenter', 'dragover'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                handleLocalFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Google Drive Modal
+        function openDriveModal() {
+            driveModal.classList.add("active");
+            driveUrlInput.focus();
+        }
+
+        function closeDriveModal() {
+            driveModal.classList.remove("active");
+            driveUrlInput.value = "";
+            driveFileNameInput.value = "";
+        }
+
+        btnDriveUpload.addEventListener("click", openDriveModal);
+        btnModalClose.addEventListener("click", closeDriveModal);
+        btnCancelDrive.addEventListener("click", closeDriveModal);
+        driveModal.addEventListener("click", (e) => {
+            if (e.target === driveModal) closeDriveModal();
+        });
+
+        // Extract filename from Google Drive URL or ID if not provided
+        function extractDriveName(url, customName) {
+            if (customName && customName.trim()) return customName.trim();
+            try {
+                const parsed = new URL(url);
+                const segments = parsed.pathname.split('/');
+                const idIndex = segments.indexOf('d');
+                if (idIndex !== -1 && segments[idIndex + 1]) {
+                    return `Google Drive Document (${segments[idIndex + 1].substring(0, 8)}...)`;
+                }
+            } catch (e) {}
+            return "Google Drive Document";
+        }
+
+        btnAddDriveFile.addEventListener("click", () => {
+            const url = driveUrlInput.value.trim();
+            if (!url) {
+                driveUrlInput.focus();
+                return;
+            }
+
+            const fileName = extractDriveName(url, driveFileNameInput.value);
+
+            attachments.push({
+                name: fileName,
+                source: "google_drive",
+                url: url,
+                type: "application/google-drive"
+            });
+
+            renderFiles();
+            closeDriveModal();
+        });
+
+        // Form Submit
         document.getElementById("f").addEventListener("submit", async (e) => {
             e.preventDefault();
             const btn = document.getElementById("btn"), out = document.getElementById("result");
             const body = {};
-            [...ids, "reason"].forEach(id => body[id] = document.getElementById(id).value.trim());
-            ids.forEach(id => localStorage.setItem(id, body[id]));
-            btn.disabled = true; btn.textContent = "Working..."; out.style.display = "block"; out.className = "";
+
+            ids.forEach(id => {
+                body[id] = document.getElementById(id).value.trim();
+                localStorage.setItem(id, body[id]);
+            });
+
+            body.reason = document.getElementById("reason").value.trim();
+
+            // Include structured attachments
+            body.attachments = attachments.map(att => {
+                if (att.source === "google_drive") {
+                    return {
+                        name: att.name,
+                        source: "google_drive",
+                        url: att.url,
+                        type: att.type
+                    };
+                }
+                return {
+                    name: att.name,
+                    source: "computer",
+                    type: att.type,
+                    size: att.size,
+                    data: att.data
+                };
+            });
+
+            // Append attachment references to reason as well so agent prompt has direct context
+            if (attachments.length > 0) {
+                const attachListText = attachments.map((a, i) => {
+                    if (a.source === "google_drive") {
+                        return `[File ${i+1}: ${a.name} (Google Drive link: ${a.url})]`;
+                    }
+                    return `[File ${i+1}: ${a.name} (Attached from computer, ${formatBytes(a.size)})]`;
+                }).join(", ");
+                body.attachmentSummary = attachListText;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Working...";
+            out.style.display = "block";
+            out.className = "";
             out.textContent = "The agent is writing and checking your email...";
+
             try {
-                const res = await fetch(WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                const res = await fetch(WEBHOOK_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
                 const text = await res.text();
-                let data; try { data = JSON.parse(text); } catch { data = { result: text }; }
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = { result: text };
+                }
+
                 if (!res.ok) throw new Error(data.message || text || res.status);
                 out.textContent = data.result || text;
             } catch (err) {
-                out.className = "err"; out.textContent = "Error: " + err.message;
+                out.className = "err";
+                out.textContent = "Error: " + err.message;
             } finally {
-                btn.disabled = false; btn.textContent = "Generate, verify & send";
+                btn.disabled = false;
+                btn.textContent = "Generate, verify & send";
             }
         });
     </script>
