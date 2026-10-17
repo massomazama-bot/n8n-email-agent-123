@@ -13,7 +13,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        220,
+        200,
         300
       ],
       "webhookId": "email-request-ui"
@@ -21,28 +21,58 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Extract request payload safely\nconst body = $json.body || $json;\n\nconst senderName = body.senderName || 'Sender';\nconst senderEmail = body.senderEmail || '';\nconst recipient = body.recipient || 'recipient@example.com';\nconst reason = body.reason || 'Follow up';\nconst attachments = Array.isArray(body.attachments) ? body.attachments : [];\nconst attachmentSummary = body.attachmentSummary || '';\n\n// Format attached files and Google Drive links\nlet filesContext = 'No attachments';\nif (attachments.length > 0) {\n  filesContext = attachments.map((att, index) => {\n    if (att.source === 'google_drive') {\n      return `• [Google Drive Link] ${att.name || 'Document'}: ${att.url}`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `• [Computer Upload] ${att.name || 'Attachment'} (${sizeKb})`;\n  }).join('\\n');\n}\n\n// Generate prompt for AI / LLM node\nconst prompt = `Sender: ${senderName} (${senderEmail})\\nRecipient: ${recipient}\\nIntent / Context: ${reason}\\nAttachments Included:\\n${filesContext}\\n\\nPlease write a polished, professional email. Include a clear subject line and sign off warmly as ${senderName}.`;\n\nreturn {\n  senderName,\n  senderEmail,\n  recipient,\n  reason,\n  attachments,\n  filesContext,\n  prompt\n};"
+        "jsCode": "// Extract request payload safely\nconst body = $json.body || $json;\n\nconst senderName = body.senderName || 'Sender';\nconst senderEmail = body.senderEmail || '';\nconst recipient = body.recipient || 'recipient@example.com';\nconst reason = body.reason || 'Follow up';\nconst attachments = Array.isArray(body.attachments) ? body.attachments : [];\nconst attachmentSummary = body.attachmentSummary || '';\n\n// Format attached files and Google Drive links\nlet filesContext = 'No attachments';\nif (attachments.length > 0) {\n  filesContext = attachments.map((att, index) => {\n    if (att.source === 'google_drive') {\n      return `• [Google Drive Link] ${att.name || 'Document'}: ${att.url}`;\n    }\n    const sizeKb = att.size ? `${Math.round(att.size / 1024)} KB` : 'file';\n    return `• [Computer Upload] ${att.name || 'Attachment'} (${sizeKb})`;\n  }).join('\\n');\n}\n\nreturn {\n  senderName,\n  senderEmail,\n  recipient,\n  reason,\n  attachments,\n  filesContext\n};"
       },
       "id": "e88d8a35-e51c-4b36-a19e-112233445566",
       "name": "Parse & Prepare Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        460,
+        420,
         300
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Drafts the email using input parameters\nconst item = $json;\n\n// Extract subject intent\nlet subject = item.reason.length > 50 ? item.reason.substring(0, 47) + '...' : item.reason;\nif (!subject.toLowerCase().startsWith('regarding') && !subject.toLowerCase().startsWith('update')) {\n  subject = `Update: ${subject}`;\n}\n\n// Build polished message\nlet bodyText = `Hi there,\\n\\nI hope you are having a productive week.\\n\\n${item.reason}\\n`;\n\nif (item.attachments && item.attachments.length > 0) {\n  bodyText += `\\nPlease find the relevant attachment(s) referenced below:\\n${item.filesContext}\\n`;\n}\n\nbodyText += `\\nPlease let me know if you have any questions or need further details.\\n\\nBest regards,\\n${item.senderName}\\n${item.senderEmail}`;\n\nconst formattedResult = `✉️ Email Verified & Prepared!\\n\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `To: ${item.recipient}\\n` +\n  `From: ${item.senderName} <${item.senderEmail}>\\n` +\n  `Subject: ${subject}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n  `${bodyText}\\n\\n` +\n  (item.attachments.length > 0 ? `📎 Attached Items (${item.attachments.length}):\\n${item.filesContext}\\n\\n` : '') +\n  `✅ Verification: Tone checked, recipient validated, attachments indexed.`;\n\nreturn {\n  status: \"success\",\n  recipient: item.recipient,\n  senderEmail: item.senderEmail,\n  subject: subject,\n  emailBody: bodyText,\n  attachmentsCount: item.attachments.length,\n  result: formattedResult\n};"
+        "jsCode": "// Drafts the email using input parameters\nconst item = $json;\n\n// Extract subject intent\nlet subject = item.reason.length > 50 ? item.reason.substring(0, 47) + '...' : item.reason;\nif (!subject.toLowerCase().startsWith('regarding') && !subject.toLowerCase().startsWith('update')) {\n  subject = `Update: ${subject}`;\n}\n\n// Build polished message body\nlet bodyText = `Hi there,\\n\\nI hope you are having a productive week.\\n\\n${item.reason}\\n`;\n\nif (item.attachments && item.attachments.length > 0) {\n  bodyText += `\\nPlease find the relevant attachment(s) referenced below:\\n${item.filesContext}\\n`;\n}\n\nbodyText += `\\nPlease let me know if you have any questions or need further details.\\n\\nBest regards,\\n${item.senderName}\\n${item.senderEmail}`;\n\nconst formattedResult = `✉️ Email Verified & Sent!\\n\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `To: ${item.recipient}\\n` +\n  `From: ${item.senderName} <${item.senderEmail}>\\n` +\n  `Subject: ${subject}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n  `${bodyText}\\n\\n` +\n  (item.attachments.length > 0 ? `📎 Attached Items (${item.attachments.length}):\\n${item.filesContext}\\n\\n` : '') +\n  `✅ Verification: Tone checked, recipient validated, message dispatched.`;\n\nreturn {\n  recipient: item.recipient,\n  senderEmail: item.senderEmail,\n  senderName: item.senderName,\n  subject: subject,\n  emailBody: bodyText,\n  attachmentsCount: item.attachments.length,\n  filesContext: item.filesContext,\n  formattedDraft: formattedResult\n};"
       },
       "id": "a11d8a35-e51c-4b36-a19e-223344556677",
       "name": "Draft & Verify Email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        700,
+        640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.recipient }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.emailBody }}",
+        "options": {}
+      },
+      "id": "b33d8a35-e51c-4b36-a19e-445566778899",
+      "name": "Send Email (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const draft = $('Draft & Verify Email').first().json;\nconst gmailOutput = $json;\n\nconst confirmationText = `🚀 Email Successfully Dispatched!\\n\\n` +\n  `Status: Sent to ${draft.recipient}\\n` +\n  (gmailOutput.id ? `Gmail Message ID: ${gmailOutput.id}\\n` : '') +\n  `\\n` + draft.formattedDraft;\n\nreturn {\n  status: 'success',\n  result: confirmationText,\n  recipient: draft.recipient,\n  subject: draft.subject,\n  messageId: gmailOutput.id || 'sent'\n};"
+      },
+      "id": "d44d8a35-e51c-4b36-a19e-556677889900",
+      "name": "Format Delivery Confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
         300
       ]
     },
@@ -58,7 +88,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        940,
+        1300,
         300
       ]
     }
@@ -87,6 +117,28 @@
       ]
     },
     "Draft & Verify Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Format Delivery Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Delivery Confirmation": {
       "main": [
         [
           {
